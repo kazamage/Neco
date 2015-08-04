@@ -1,0 +1,29 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+sourceCompatibility = jdkVersion
+targetCompatibility = jdkVersion
+
+tasks.withType(AbstractCompile) {
+    it.options.encoding = defaultEncoding
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "com.google.guava:guava:$guavaVersion"
+    compile "org.freemarker:freemarker:$freeMarkerVersion"
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = gradleWrapperVersion
+}
