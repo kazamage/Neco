@@ -1,4 +1,4 @@
-package jp.pgw.develop.swallow.neco.annotation.processor;
+package jp.pgw.develop.swallow.neco.apt.bean;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -6,10 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -26,6 +23,7 @@ import javax.tools.JavaFileObject;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import jp.pgw.develop.swallow.neco.annotation.Neco;
 import jp.pgw.develop.swallow.neco.util.Strings2;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -35,19 +33,21 @@ import com.google.common.collect.Maps;
 /**
  * NecoProcessor
  */
-@SupportedAnnotationTypes(NecoProcessor.ANNOTATION)
-@SupportedOptions({ NecoProcessor.PACKAGE, NecoProcessor.PACKAGE_SUFFIX, NecoProcessor.CLASS_SUFFIX })
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedAnnotationTypes("jp.pgw.develop.swallow.neco.annotation.Neco")
+@SupportedOptions({NecoProcessor.PACKAGE, NecoProcessor.PACKAGE_SUFFIX, NecoProcessor.CLASS_SUFFIX})
 public class NecoProcessor extends AbstractProcessor {
 
-    static final String PACKAGE = "jp.pgw.develop.swallow.neco.annotation.processor.package";
-    static final String PACKAGE_SUFFIX = "jp.pgw.develop.swallow.neco.annotation.processor.package.suffix";
-    static final String CLASS_PREFIX = "jp.pgw.develop.swallow.neco.annotation.processor.class.prefix";
-    static final String CLASS_SUFFIX = "jp.pgw.develop.swallow.neco.annotation.processor.class.suffix";
-    static final String ANNOTATION = "jp.pgw.develop.swallow.neco.annotation.Neco";
+    static final String PACKAGE = "jp.pgw.develop.swallow.neco.annotation.jp.pgw.develop.swallow.neco.apt.bean.package";
+    static final String PACKAGE_SUFFIX = "jp.pgw.develop.swallow.neco.annotation.jp.pgw.develop.swallow.neco.apt.bean.package.suffix";
+    static final String CLASS_PREFIX = "jp.pgw.develop.swallow.neco.annotation.jp.pgw.develop.swallow.neco.apt.bean.class.prefix";
+    static final String CLASS_SUFFIX = "jp.pgw.develop.swallow.neco.annotation.jp.pgw.develop.swallow.neco.apt.bean.class.suffix";
+
     private static final Template TEMPLATE;
+
     static {
-        Configuration cfg = new Configuration(Configuration.VERSION_2_3_23);
-        cfg.setClassForTemplateLoading(NecoProcessor.class, NecoProcessor.class.getPackage().getName());
+        final Configuration cfg = new Configuration(Configuration.VERSION_2_3_23);
+        cfg.setClassForTemplateLoading(NecoProcessor.class, "/");
         try {
             TEMPLATE = cfg.getTemplate("meta.ftl");
         } catch (IOException e) {
@@ -55,38 +55,26 @@ public class NecoProcessor extends AbstractProcessor {
         }
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (roundEnv.processingOver()) {
+        if (annotations.isEmpty()) {
+            info("No target annotations.");
             return true;
         }
         for (TypeElement annotation : annotations) {
             for (TypeElement element : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(annotation))) {
-                if (hasAnnotation(element)) {
-                    generateMetaClass(element, roundEnv);
-                }
+                info(element.toString());
+                generateMetaClass(element, roundEnv);
             }
         }
         return true;
     }
 
-    private boolean hasAnnotation(TypeElement element) {
-        List<? extends AnnotationMirror> mirrors = element.getAnnotationMirrors();
-        if (mirrors == null || mirrors.isEmpty()) {
-            return false;
-        }
-        for (AnnotationMirror mirror : mirrors) {
-            if (mirror.getAnnotationType().toString().equals(ANNOTATION)) {
-                return true;
-            }
-        }
-        return false;
+    private void info(String msg) {
+        processingEnv.getMessager().printMessage(Kind.NOTE, msg);
     }
 
     private void generateMetaClass(TypeElement element, RoundEnvironment roundEnv) {
@@ -236,7 +224,7 @@ public class NecoProcessor extends AbstractProcessor {
         BeanMetaData(TypeElement element) {
             this.element = element;
         }
-        
+
         public String getFullQualifiedName() {
             return element.getQualifiedName().toString();
         }

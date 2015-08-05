@@ -8,17 +8,56 @@ tasks.withType(AbstractCompile) {
     it.options.encoding = defaultEncoding
 }
 
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+configurations {
+    apt
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile "com.google.guava:guava:$guavaVersion"
+    compile "com.google.auto:auto-common:$autoCommonVersion"
     compile "org.freemarker:freemarker:$freeMarkerVersion"
+    testCompile "com.google.testing.compile:compile-testing:$compileTestingVersion"
+}
+
+task generateNeco(type: JavaCompile, group: 'build', description: 'Generates the Neco meta types', dependsOn: compileJava) {
+    source = sourceSets.main.java
+    classpath = sourceSets.main.output + configurations.compile + configurations.apt
+    options.compilerArgs = [
+//            "-proc:only",
+            "-processor", "jp.pgw.develop.swallow.neco.apt.bean.NecoProcessor"
+    ]
+    destinationDir = sourceSets.generated.java.srcDirs.iterator().next()
+}
+
+//compileJava {
+//    dependsOn generateNeco
+//    source generateNeco.destinationDir
+//}
+
+compileGeneratedJava {
+    dependsOn generateNeco
+    options.warnings = false
+    classpath += sourceSets.main.runtimeClasspath
+}
+
+clean {
+    delete sourceSets.generated.java.srcDirs
 }
 
 idea {
     module {
+        sourceDirs += file('src/main/generated')
         downloadJavadoc = true
         downloadSources = true
     }
@@ -27,3 +66,4 @@ idea {
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
 }
+

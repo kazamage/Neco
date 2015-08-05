@@ -15,7 +15,7 @@ import com.google.common.collect.ImmutableMap.Builder;
  * ${className}.
  */
 public class ${className} {
-<<#list properties as property>
+<#list properties as property>
     /** ${property.name}. */
     public static final BeanProperty<${property.bean.className}, ${property.wrappedType}> ${property.name} = new BeanProperty<${property.bean.className}, ${property.wrappedType}>() {
 
